@@ -34,22 +34,15 @@
 ## 🧭 Aperçu du dépôt
 ```text
 .
-├─ vhi_manager/
-│  ├─ main.py                  # TUI (Rich) : dashboard + actions (Créer VM, Manage VM…)
-│  └─ openstack_client.py      # Wrapper auth Keystone v3 + appels Nova/Neutron/Cinder/Glance
 ├─ cloud-init/
-│  ├─ wordpress.yml            # Déploiement WordPress (fr_FR) prêt à l’emploi
-│  └─ odoo.yml                 # Déploiement Odoo + Postgres + service systemd
-├─ monitoring/
-│  ├─ prometheus.yml.example   # Scrape node_exporter
-│  ├─ rules_cpu.yml            # Alertes CPU 70% / 90% sur 5 min
-│  └─ grafana-dash-1860.json   # (optionnel) Node Exporter Full
-├─ examples/
-│  ├─ .env.example             # Variables d’environnement OS_*
-│  └─ requirements.txt         # Dépendances Python
-├─ .gitignore
-├─ README.md
-└─ LICENSE
+│  ├─ Odoo.py                  # Déploiement Odoo prêt à l’emploi
+│  └─ Worldpress.py            # Déploiement WordPress prêt à l’emploi
+│
+├─ vhi-cli.py
+│
+├─ vhi-web.php
+│
+└─ README.md
 ```
 
 ---
