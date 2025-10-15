@@ -1,1 +1,252 @@
-# ProjetVHI
+# 🛠️ VHI Toolbox — Automatisation & Supervision (Virtuozzo Hybrid Infrastructure)
+
+> Outils pour gérer un cloud **VHI/OpenStack**, déployer des VMs applicatives via **cloud-init** (WordPress / Odoo) et superviser l’infra avec **Prometheus + Grafana**.
+
+---
+
+## ✨ Sommaire
+- [Objectifs](#-objectifs)
+- [Aperçu du dépôt](#-aperçu-du-dépôt)
+- [Fonctionnalités](#-fonctionnalités)
+- [Prérequis](#-prérequis)
+- [Installation](#-installation)
+- [Configuration (VHI/OpenStack)](#-configuration-vhiopenstack)
+- [Utilisation — VHI Manager (CLI)](#-utilisation--vhi-manager-cli)
+- [Utilisation — VHI Manager (WEB)](#-utilisation--vhi-manager-web)
+- [cloud-init (WordPress & Odoo)](#-cloud-init-wordpress--odoo)
+- [Supervision (Prometheus & Grafana)](#-supervision-prometheus--grafana)
+- [Alertes CPU (70%/90% sur 5 min)](#-alertes-cpu-7090-sur-5-min)
+- [Tests rapides](#-tests-rapides)
+- [Sécurité](#-sécurité)
+- [Roadmap](#-roadmap)
+- [Contribuer](#-contribuer)
+- [Licence](#-licence)
+
+---
+
+## 🎯 Objectifs
+- **Piloter VHI** via un client **Python** (Keystone v3, Nova, Neutron, Cinder, Glance).
+- **Déployer automatiquement** des VMs applicatives prêtes à l’emploi (cloud-init).
+- **Superviser** CPU/RAM/Disk/Réseau + **alerting** (Grafana/Prometheus).
+
+---
+
+## 🧭 Aperçu du dépôt
+```text
+.
+├─ vhi_manager/
+│  ├─ main.py                  # TUI (Rich) : dashboard + actions (Créer VM, Manage VM…)
+│  └─ openstack_client.py      # Wrapper auth Keystone v3 + appels Nova/Neutron/Cinder/Glance
+├─ cloud-init/
+│  ├─ wordpress.yml            # Déploiement WordPress (fr_FR) prêt à l’emploi
+│  └─ odoo.yml                 # Déploiement Odoo + Postgres + service systemd
+├─ monitoring/
+│  ├─ prometheus.yml.example   # Scrape node_exporter
+│  ├─ rules_cpu.yml            # Alertes CPU 70% / 90% sur 5 min
+│  └─ grafana-dash-1860.json   # (optionnel) Node Exporter Full
+├─ examples/
+│  ├─ .env.example             # Variables d’environnement OS_*
+│  └─ requirements.txt         # Dépendances Python
+├─ .gitignore
+├─ README.md
+└─ LICENSE
+```
+
+---
+
+## ✅ Fonctionnalités
+**VHI Manager (CLI/TUI)**
+- Auth **Keystone v3** (token) et découverte des endpoints.
+- **Dashboard projet** : #VMs, vCPU/RAM utilisés, volumes (GB), Floating IPs.
+- **Création de VM (wizard)** :
+  - Nom, **Image (Glance)**, **Flavor** (pré-sélection *small*), **Réseau (Neutron)**.
+  - **Security Groups**, **IP DHCP / IP fixe**, **IP spoof ON/OFF**.
+  - **SSH keypair** (import `.pub` ou existante), **cloud-init** (user-data base64).
+- **Manage VM** :
+  - **START / REBOOT (SOFT/HARD) / SHUTDOWN**.
+  - **Config VM** : vCPU, RAM, disque local, total volumes attachés, IP, SG, spoof.
+
+**cloud-init**
+- **WordPress** : LAMP + WP-CLI, site FR auto, permaliens, rewrite, droits.
+- **Odoo** : Postgres, venv Python, `requirements`, service `systemd`.
+
+**Supervision**
+- **Prometheus** scrappe `prometheus-node-exporter` (`:9100`) sur les VMs.
+- **Grafana** : datasource Prometheus + dashboard **Node Exporter Full (ID 1860)**.
+- **Alertes CPU** : Warning ≥ 70 % / 5 min, Critical ≥ 90 % / 5 min.
+
+---
+
+## 🔧 Prérequis
+- Python **3.11+**
+- Accès API **VHI/OpenStack** (Keystone v3)
+- Ubuntu 24.04 LTS conseillé (supervision & nodes)
+- Ouvertures réseau : `9090` (Prometheus), `3000` (Grafana), `9100` (node_exporter)
+
+---
+
+## 📦 Installation
+```bash
+git clone https://github.com/<org>/<repo>.git
+cd <repo>
+
+# environnement virtuel
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Dépendances
+pip install -r examples/requirements.txt
+```
+---
+
+## ⚙️ Configuration (VHI/OpenStack)
+Préférez **variables d’environnement** :
+
+```bash
+export OS_AUTH_URL="https://<vhi-panel>:5000/v3"
+export OS_USERNAME="evan"
+export OS_PASSWORD="********"
+export OS_USER_DOMAIN_NAME="LyceeJulesFil"
+export OS_PROJECT_DOMAIN_NAME="LyceeJulesFil"
+export OS_PROJECT_NAME="Evan"
+```
+---
+
+## 🖥️ Utilisation — VHI Manager (CLI)
+```bash
+python vhi_manager/main.py
+```
+
+- **Dashboard** : stats projet, quotas, IP flottantes.
+- **Créer une VM** : wizard interactif (image, flavor, réseau, SG, IP, SSH, user-data).
+- **Gérer une VM** : start/stop/reboot + configuration détaillée.
+  
+  <img width="1082" height="717" alt="image" src="https://github.com/user-attachments/assets/7d47c6c5-a6f0-4e87-8a07-1f882283e114" />
+
+---
+
+## 🖥️ Utilisation — VHI Manager (WEB)
+
+Interface web servie derrière **WampServer (Apache)**, avec un backend js API.
+
+- **Dashboard** : stats projet, quotas, IP flottantes.
+- **Créer une VM** : wizard interactif (image, flavor, réseau, SG, IP, SSH, user-data).
+- **Gérer une VM** : start/stop/reboot/vnc/snapshot + configuration détaillée.
+- **Gérer nos NETWORK** : création/edit/suppression + configuration détaillée.
+- **Gérer nos IP FLOAT** : allocation/libération.
+
+  <img width="1918" height="862" alt="image" src="https://github.com/user-attachments/assets/ece0aa38-0c55-4e1c-b9fc-251f78a7987f" />
+
+## ☁️ cloud-init (WordPress & Odoo)
+
+Placez vos fichiers dans `cloud-init/` (voir `wordpress.yml`, `odoo.yml`).  
+Dans VHI, au moment de créer la VM depuis un template cloud-init ready, **collez le YAML** (`#cloud-config`) ou **importez le fichier**.
+
+**Extrait `cloud-init/wordpress.yml`**
+```yaml
+#cloud-config
+packages:
+  - apache2
+  - mariadb-server
+  - php
+  - php-mysql
+runcmd:
+  - apt-get update
+  - systemctl enable --now apache2 mariadb
+  - curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+  - php wp-cli.phar --info
+```
+
+---
+
+## 📊 Supervision (Prometheus & Grafana)
+
+### Sur chaque VM à superviser
+```bash
+sudo apt update
+sudo apt install -y prometheus-node-exporter
+sudo systemctl enable --now prometheus-node-exporter
+# UFW (si actif) :
+sudo ufw allow 9100/tcp
+```
+
+### Sur la VM supervision (Prometheus)
+`/etc/prometheus/prometheus.yml` (exemple) :
+```yaml
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'node'
+    static_configs:
+      - targets:
+          - '10.0.0.11:9100'
+          - '10.0.0.12:9100'
+          - '10.0.0.13:9100'
+```
+
+Reload :
+```bash
+sudo systemctl reload prometheus
+```
+Vérification : `http://<IP>:9090/targets` → targets **UP**.
+
+  <img width="1397" height="117" alt="image" src="https://github.com/user-attachments/assets/4c7777dd-2db1-4f10-9011-16ba9352d64a" />
+
+### Grafana
+- URL : `http://<IP>:3000` (login initial `admin`, forcer un nouveau mot de passe).
+- **Data source** → Prometheus → URL : `http://localhost:9090` → *Save & Test*.
+- **Dashboards** → *Import* → ID **1860** (*Node Exporter Full*) → *Import*.
+
+  <img width="1607" height="756" alt="image" src="https://github.com/user-attachments/assets/a2675b35-67a2-4211-990c-171ad1975be6" />
+
+---
+
+## 🚨 Alertes CPU (70%/90% sur 5 min)
+`monitoring/rules_cpu.yml` :
+```yaml
+groups:
+  - name: cpu.rules
+    rules:
+      - alert: CPU70Warn
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle",job="node"}[5m])) * 100) >= 70
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "CPU élevé (Warning) sur {{ $labels.instance }}"
+          description: "≥ 70% depuis 5m ({{ $value | printf \"%.1f\" }}%)"
+
+      - alert: CPU90Critical
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle",job="node"}[5m])) * 100) >= 90
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: "CPU très élevé (Critical) sur {{ $labels.instance }}"
+          description: "≥ 90% depuis 5m ({{ $value | printf \"%.1f\" }}%)"
+```
+
+**Notifications Grafana → Google Chat (webhook)**  
+Alerting → *Contact points* → *New* → **Google Chat** (URL webhook).  
+Alerting → *Notification policies* : `severity=warning|critical`.
+
+  <img width="865" height="747" alt="image" src="https://github.com/user-attachments/assets/84fc189e-67b8-4e47-8b34-126eb06f6932" />
+
+---
+
+## 🧪 Tests rapides
+**Monter la charge CPU (sur une VM)** :
+```bash
+sudo apt update && sudo apt install -y stress-ng
+stress-ng --cpu 0 --cpu-load 100 --timeout 7m
+```
+
+**PromQL utiles (Grafana → Explore)** :
+```promql
+up{job="node"}
+100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100
+```
+
+  <img width="1573" height="298" alt="image" src="https://github.com/user-attachments/assets/154fb998-467a-4ea8-98c1-b63642f00789" />
+
+---
