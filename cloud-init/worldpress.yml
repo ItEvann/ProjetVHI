@@ -1,0 +1,45 @@
+#cloud-config
+package_update: true
+packages:
+  - apache2
+  - mariadb-server
+  - php
+  - libapache2-mod-php
+  - php-mysql
+  - php-xml
+  - php-zip
+  - php-gd
+  - php-curl
+  - php-mbstring
+  - unzip
+  - curl
+  - ca-certificates
+
+write_files:
+  - path: /etc/apache2/conf-available/override.conf
+    permissions: '0644'
+    content: |
+      <Directory /var/www/html/>
+        AllowOverride All
+      </Directory>
+
+runcmd:
+  - [ systemctl, enable, --now, mariadb ]
+  - [ systemctl, enable, --now, apache2 ]
+  - [ bash, -lc, "mysql -e \"CREATE DATABASE IF NOT EXISTS wp DEFAULT CHARACTER SET utf8mb4;\"" ]
+  - [ bash, -lc, "mysql -e \"CREATE USER IF NOT EXISTS 'wp'@'localhost' IDENTIFIED BY 'ChangeMe!';\"" ]
+  - [ bash, -lc, "mysql -e \"GRANT ALL PRIVILEGES ON wp.* TO 'wp'@'localhost'; FLUSH PRIVILEGES;\"" ]
+  - [ bash, -lc, "rm -rf /var/www/html/* && curl -fsSL https://wordpress.org/latest.tar.gz -o /tmp/wp.tgz && tar -xzf /tmp/wp.tgz -C /var/www/html --strip-components=1" ]
+  - [ bash, -lc, "cp /var/www/html/wp-config-sample.php /var/www/html/wp-config.php && sed -i \"s/database_name_here/wp/; s/username_here/wp/; s/password_here/ChangeMe!/\" /var/www/html/wp-config.php" ]
+  - [ bash, -lc, "curl -fsSL https://api.wordpress.org/secret-key/1.1/salt/ -o /tmp/wp.salt && sed -i \"/AUTH_KEY/d;/SECURE_AUTH_KEY/d;/LOGGED_IN_KEY/d;/NONCE_KEY/d;/AUTH_SALT/d;/SECURE_AUTH_SALT/d;/LOGGED_IN_SALT/d;/NONCE_SALT/d\" /var/www/html/wp-config.php && sed -i \"/^define( 'DB_COLLATE', '' );/r /tmp/wp.salt\" /var/www/html/wp-config.php" ]
+  - [ bash, -lc, "curl -fsSL https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar -o /usr/local/bin/wp && chmod +x /usr/local/bin/wp" ]
+  - [ bash, -lc, "IP=$(hostname -I | awk '{print $1}'); URL=\"http://${IP}/\"; sudo -u www-data /usr/local/bin/wp core install --url=\"${URL}\" --title=\"Mon Site\" --admin_user=\"admin\" --admin_password=\"ChangeMeAdmin!\" --admin_email=\"admin@example.com\" --skip-email --locale=fr_FR --path=/var/www/html" ]
+  - [ a2enmod, rewrite ]
+  - [ a2enconf, override ]
+  - [ systemctl, reload, apache2 ]
+  - [ bash, -lc, "sudo -u www-data /usr/local/bin/wp option update permalink_structure '/%postname%/' --path=/var/www/html && sudo -u www-data /usr/local/bin/wp rewrite flush --hard --path=/var/www/html" ]
+  - [ chown, -R, www-data:www-data, /var/www/html ]
+  - [ chmod, -R, "0777", /var/www/html ]
+  - [ bash, -lc, "ufw allow 80/tcp || true" ]
+
+final_message: "WordPress deployed and installed. Open http://<IP>/ (admin: admin / ChangeMeAdmin!)."

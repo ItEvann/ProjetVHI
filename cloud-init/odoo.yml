@@ -1,0 +1,48 @@
+#cloud-config
+package_update: true
+packages: [software-properties-common,build-essential,git,curl,nginx,postgresql,libpq-dev,libldap2-dev,libsasl2-dev,libxml2-dev,libxslt1-dev,libjpeg-dev,zlib1g-dev,ca-certificates]
+
+write_files:
+  - path: /etc/odoo/odoo.conf
+    permissions: '0644'
+    content: |
+      [options]
+      admin_passwd = ChangeMeAdmin!
+      db_host = 127.0.0.1
+      db_port = 5432
+      db_user = odoo
+      db_password = ChangeMeDB!
+      xmlrpc_port = 8069
+      longpolling_port = 8072
+      addons_path = /opt/odoo/odoo/addons
+      logfile = /var/log/odoo/odoo.log
+  - path: /etc/systemd/system/odoo.service
+    permissions: '0644'
+    content: |
+      [Unit]
+      Description=Odoo 18
+      After=network.target postgresql.service
+      [Service]
+      Type=simple
+      User=odoo
+      Group=odoo
+      ExecStart=/opt/odoo/venv/bin/python /opt/odoo/odoo/odoo-bin -c /etc/odoo/odoo.conf
+      Restart=on-failure
+      [Install]
+      WantedBy=multi-user.target
+  - path: /etc/nginx/sites-available/odoo
+    permissions: '0644'
+    content: |
+      server {
+        listen 80;
+        server_name _;
+        proxy_read_timeout 720s;
+        client_max_body_size 64m;
+        location / { proxy_pass http://127.0.0.1:8069; proxy_set_header Host $host; proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; proxy_set_header X-Forwarded-Proto $scheme; }
+        location /longpolling { proxy_pass http://127.0.0.1:8072; }
+      }
+
+runcmd:
+  - bash -lc 'add-apt-repository -y ppa:deadsnakes/ppa && apt-get update && apt-get install -y python3.11 python3.11-venv python3.11-dev python3-pip && id -u odoo >/dev/null 2>&1 || useradd -m -d /opt/odoo -s /bin/bash odoo && install -d -m 0755 -o odoo -g odoo /var/log/odoo && systemctl enable --now postgresql && sudo -u postgres psql -tc "SELECT 1 FROM pg_roles WHERE rolname='\''odoo'\''" | grep -q 1 || sudo -u postgres psql -c "CREATE ROLE odoo WITH LOGIN SUPERUSER PASSWORD '\''ChangeMeDB!'\'';" && sudo -u postgres createdb -O odoo odoo || true && python3.11 -m venv /opt/odoo/venv && /opt/odoo/venv/bin/pip install --upgrade pip wheel setuptools && sudo -u odoo git clone --depth 1 --branch 18.0 https://github.com/odoo/odoo.git /opt/odoo/odoo && /opt/odoo/venv/bin/pip install -r /opt/odoo/odoo/requirements.txt && /opt/odoo/venv/bin/pip install "urllib3==1.26.18" "requests==2.31.0" gevent greenlet psycopg2-binary && chown -R odoo:odoo /opt/odoo && ln -sf /etc/nginx/sites-available/odoo /etc/nginx/sites-enabled/odoo && rm -f /etc/nginx/sites-enabled/default && systemctl daemon-reload && systemctl reload nginx && systemctl stop odoo || true && sudo -u odoo /opt/odoo/venv/bin/python /opt/odoo/odoo/odoo-bin -c /etc/odoo/odoo.conf -d odoo -i base --without-demo=all --stop-after-init && systemctl enable --now odoo && ufw allow 80/tcp || true'
+
+final_message: "Odoo 18 ready: http://<IP>/"
