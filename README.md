@@ -35,8 +35,8 @@
 ```text
 .
 ├─ cloud-init/
-│  ├─ Odoo.py                  # Déploiement Odoo prêt à l’emploi
-│  └─ Worldpress.py            # Déploiement WordPress prêt à l’emploi
+│  ├─ Odoo.yml                  # Déploiement Odoo prêt à l’emploi
+│  └─ Worldpress.yml            # Déploiement WordPress prêt à l’emploi
 │
 ├─ vhi-cli.py
 │
