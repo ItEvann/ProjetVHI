@@ -121,7 +121,7 @@ python vhi_manager/main.py
 - **Créer une VM** : wizard interactif (image, flavor, réseau, SG, IP, SSH, user-data).
 - **Gérer une VM** : start/stop/reboot + configuration détaillée.
   
-  <img width="1082" height="717" alt="image" src="https://github.com/user-attachments/assets/7d47c6c5-a6f0-4e87-8a07-1f882283e114" />
+  <img width="1072" height="706" alt="image" src="https://github.com/user-attachments/assets/91ad3409-8d02-42d2-a645-16e9049ef016" />
 
 ---
 
@@ -135,7 +135,7 @@ Interface web servie derrière **WampServer (Apache)**, avec un backend js API.
 - **Gérer nos NETWORK** : création/edit/suppression + configuration détaillée.
 - **Gérer nos IP FLOAT** : allocation/libération.
 
-  <img width="1918" height="862" alt="image" src="https://github.com/user-attachments/assets/ece0aa38-0c55-4e1c-b9fc-251f78a7987f" />
+  <img width="1918" height="863" alt="image" src="https://github.com/user-attachments/assets/8355fdea-9c3f-406e-99e0-4a40bac127be" />
 
 ## ☁️ cloud-init (WordPress & Odoo)
 
@@ -191,14 +191,14 @@ sudo systemctl reload prometheus
 ```
 Vérification : `http://<IP>:9090/targets` → targets **UP**.
 
-  <img width="1397" height="117" alt="image" src="https://github.com/user-attachments/assets/4c7777dd-2db1-4f10-9011-16ba9352d64a" />
+  <img width="1447" height="227" alt="image" src="https://github.com/user-attachments/assets/860d3c52-25c9-4d7d-960c-9db85dedfb4a" />
 
 ### Grafana
 - URL : `http://<IP>:3000` (login initial `admin`, forcer un nouveau mot de passe).
 - **Data source** → Prometheus → URL : `http://localhost:9090` → *Save & Test*.
 - **Dashboards** → *Import* → ID **1860** (*Node Exporter Full*) → *Import*.
 
-  <img width="1607" height="756" alt="image" src="https://github.com/user-attachments/assets/a2675b35-67a2-4211-990c-171ad1975be6" />
+  <img width="1591" height="757" alt="image" src="https://github.com/user-attachments/assets/dab062f1-ee44-4c2f-bcd3-761e728bb4d9" />
 
 ---
 
@@ -229,7 +229,7 @@ groups:
 Alerting → *Contact points* → *New* → **Google Chat** (URL webhook).  
 Alerting → *Notification policies* : `severity=warning|critical`.
 
-  <img width="865" height="747" alt="image" src="https://github.com/user-attachments/assets/84fc189e-67b8-4e47-8b34-126eb06f6932" />
+  <img width="880" height="745" alt="image" src="https://github.com/user-attachments/assets/ff2a2a1e-15dd-4c0f-ac34-2e007dd07a4b" />
 
 ---
 
@@ -247,6 +247,6 @@ up{job="node"}
 (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100
 ```
 
-  <img width="1573" height="298" alt="image" src="https://github.com/user-attachments/assets/154fb998-467a-4ea8-98c1-b63642f00789" />
+  <img width="1591" height="312" alt="image" src="https://github.com/user-attachments/assets/1155a307-bd52-4b1d-ad05-a169c16ba10a" />
 
 ---
